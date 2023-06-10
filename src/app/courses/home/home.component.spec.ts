@@ -1,5 +1,11 @@
 import { DebugElement } from "@angular/core";
-import { ComponentFixture, TestBed, waitForAsync } from "@angular/core/testing";
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  flush,
+  waitForAsync,
+} from "@angular/core/testing";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { CoursesModule } from "../courses.module";
 
@@ -84,7 +90,7 @@ describe("HomeComponent", () => {
     expect(tabs.length).toBe(2, "Unexpected number of tabs found");
   });
 
-  it("should display advanced courses when tab clicked", (done: DoneFn) => {
+  it("should display advanced courses when tab clicked", fakeAsync(() => {
     coursesService.findAllCourses.and.returnValue(of(setupCourses()));
 
     fixture.detectChanges();
@@ -92,8 +98,26 @@ describe("HomeComponent", () => {
 
     click(tabs[1]);
     fixture.detectChanges();
+    flush();
+    const cardTitles = el.queryAll(
+      By.css(".mat-mdc-tab-body-active .mat-mdc-card-title")
+    );
+    expect(cardTitles.length).toBeGreaterThan(0, "Could not find card titles");
+    expect(cardTitles[0].nativeElement.textContent).toContain(
+      "Angular Security Course",
+      "Advanced courses are not displayed"
+    );
+  }));
 
-    setTimeout(() => {
+  it("should display advanced courses when tab clicked - waitForAsync", waitForAsync(() => {
+    coursesService.findAllCourses.and.returnValue(of(setupCourses()));
+
+    fixture.detectChanges();
+    const tabs = el.queryAll(By.css(".mdc-tab"));
+
+    click(tabs[1]);
+    fixture.detectChanges();
+    fixture.whenStable().then(() => {
       const cardTitles = el.queryAll(
         By.css(".mat-mdc-tab-body-active .mat-mdc-card-title")
       );
@@ -105,7 +129,6 @@ describe("HomeComponent", () => {
         "Angular Security Course",
         "Advanced courses are not displayed"
       );
-      done();
-    }, 500);
-  });
+    });
+  }));
 });
